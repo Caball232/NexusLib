@@ -1,6 +1,6 @@
 -- ////////////////////////////////////////////
---   NexusUI  |  Enhanced Roblox UI Library
---   Fully draggable top bar + All Components
+--   NexusUI  |  Final Full Version
+--   Draggable Top Bar + Fixed Slider & Dropdown
 -- ////////////////////////////////////////////
 
 local NexusUI = {}
@@ -13,7 +13,6 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
-local Mouse = LocalPlayer:GetMouse()
 
 -- ============================================================
 --   UTILITIES
@@ -53,28 +52,25 @@ local function MakeDraggable(frame, handle)
         if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
             local delta = input.Position - dragStart
             frame.Position = UDim2.new(
-                startPos.X.Scale,
-                startPos.X.Offset + delta.X,
-                startPos.Y.Scale,
-                startPos.Y.Offset + delta.Y
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
             )
         end
     end)
 end
 
 -- ============================================================
---   ICONS
+--   ICONS (Lucide)
 -- ============================================================
 
 NexusUI.Icons = {
-    home = "rbxassetid://7072706663", user = "rbxassetid://7072724862",
-    settings = "rbxassetid://7072719169", eye = "rbxassetid://7072708913",
-    wheat = "rbxassetid://7072726260", sword = "rbxassetid://7072722913",
-    zap = "rbxassetid://7072726564", star = "rbxassetid://7072721689",
-    shield = "rbxassetid://7072721073", crosshair = "rbxassetid://7072707430",
-    map = "rbxassetid://7072713928", activity = "rbxassetid://7072704534",
-    box = "rbxassetid://7072706088", bell = "rbxassetid://7072705681",
-    trash = "rbxassetid://7072724108", refresh = "rbxassetid://7072718441",
+    home = "rbxassetid://7072706663",
+    user = "rbxassetid://7072724862",
+    settings = "rbxassetid://7072719169",
+    sword = "rbxassetid://7072722913",
+    zap = "rbxassetid://7072726564",
+    x = "rbxassetid://10747384394",           -- Close
+    chevronDown = "rbxassetid://10734949877", -- Dropdown
 }
 
 -- ============================================================
@@ -93,8 +89,8 @@ function NexusUI:CreateWindow(config)
         SideColor = config.SideColor or Color3.fromRGB(10, 10, 18),
         TextColor = config.TextColor or Color3.fromRGB(225, 225, 240),
         MutedColor = config.MutedColor or Color3.fromRGB(140, 140, 170),
-        Width = config.Width or 580,
-        Height = config.Height or 400,
+        Width = config.Width or 590,
+        Height = config.Height or 420,
         ToggleKey = config.ToggleKey or Enum.KeyCode.RightShift,
     }
 
@@ -128,8 +124,6 @@ function NexusUI:CreateWindow(config)
     })
     Create("UICorner", {CornerRadius = UDim.new(0,14)}):Clone().Parent = topBar
 
-    Create("Frame", {Size = UDim2.new(1,0,0,3), BackgroundColor3 = cfg.AccentColor, Parent = topBar})
-
     -- Title
     local titleX = 16
     if cfg.Icon then
@@ -148,14 +142,14 @@ function NexusUI:CreateWindow(config)
         TextSize = 11.5, Font = Enum.Font.Gotham, TextXAlignment = Enum.TextXAlignment.Left, Parent = topBar})
 
     -- Close Button
-    local closeBtn = Create("TextButton", {
-        Size = UDim2.new(0,30,0,30), Position = UDim2.new(1,-38,0.5,-15),
-        BackgroundColor3 = Color3.fromRGB(45,15,20), Text = "✕",
-        TextColor3 = Color3.fromRGB(255,90,100), TextSize = 15,
-        Font = Enum.Font.GothamBold, BorderSizePixel = 0, Parent = topBar,
-    })
+    local closeBtn = Create("TextButton", {Size = UDim2.new(0,32,0,32), Position = UDim2.new(1,-40,0.5,-16),
+        BackgroundColor3 = Color3.fromRGB(45,15,20), BorderSizePixel = 0, Parent = topBar})
     Create("UICorner", {CornerRadius = UDim.new(0,8)}):Clone().Parent = closeBtn
+    Create("ImageLabel", {Size = UDim2.new(0,18,0,18), Position = UDim2.new(0.5,-9,0.5,-9),
+        BackgroundTransparency = 1, Image = NexusUI.Icons.x, ImageColor3 = Color3.fromRGB(255,90,100), Parent = closeBtn})
 
+    closeBtn.MouseEnter:Connect(function() Tween(closeBtn, {BackgroundColor3 = Color3.fromRGB(60,20,25)}, 0.15) end)
+    closeBtn.MouseLeave:Connect(function() Tween(closeBtn, {BackgroundColor3 = Color3.fromRGB(45,15,20)}, 0.15) end)
     closeBtn.MouseButton1Click:Connect(function()
         Tween(main, {Size = UDim2.new(0, cfg.Width, 0, 0)}, 0.3)
         task.wait(0.32)
@@ -164,25 +158,18 @@ function NexusUI:CreateWindow(config)
     end)
 
     -- Sidebar
-    local sidebar = Create("Frame", {
-        Name = "Sidebar", Size = UDim2.new(0,152,1,-52),
-        Position = UDim2.new(0,0,0,52), BackgroundColor3 = cfg.SideColor,
-        BorderSizePixel = 0, Parent = main,
-    })
+    local sidebar = Create("Frame", {Name = "Sidebar", Size = UDim2.new(0,152,1,-52),
+        Position = UDim2.new(0,0,0,52), BackgroundColor3 = cfg.SideColor, BorderSizePixel = 0, Parent = main})
     Create("UICorner", {CornerRadius = UDim.new(0,12)}):Clone().Parent = sidebar
 
-    local tabList = Create("ScrollingFrame", {
-        Size = UDim2.new(1,0,1,-10), Position = UDim2.new(0,0,0,8),
-        BackgroundTransparency = 1, ScrollBarThickness = 0, Parent = sidebar,
-    })
+    local tabList = Create("ScrollingFrame", {Size = UDim2.new(1,0,1,-10), Position = UDim2.new(0,0,0,8),
+        BackgroundTransparency = 1, ScrollBarThickness = 0, Parent = sidebar})
     Create("UIListLayout", {Padding = UDim.new(0,4), SortOrder = Enum.SortOrder.LayoutOrder}):Clone().Parent = tabList
     Create("UIPadding", {PaddingLeft = UDim.new(0,8), PaddingRight = UDim.new(0,8)}):Clone().Parent = tabList
 
-    local contentArea = Create("Frame", {
-        Name = "Content", Size = UDim2.new(1,-160,1,-60),
+    local contentArea = Create("Frame", {Name = "Content", Size = UDim2.new(1,-160,1,-60),
         Position = UDim2.new(0,156,0,54), BackgroundTransparency = 1,
-        ClipsDescendants = true, Parent = main,
-    })
+        ClipsDescendants = true, Parent = main})
 
     MakeDraggable(main, topBar)
 
@@ -191,55 +178,36 @@ function NexusUI:CreateWindow(config)
         if input.KeyCode == cfg.ToggleKey then main.Visible = not main.Visible end
     end)
 
-    local Window = {
-        _cfg = cfg, _tabList = tabList, _contentArea = contentArea,
-        _tabs = {}, _activeTab = nil,
-    }
+    local Window = {_cfg = cfg, _tabList = tabList, _contentArea = contentArea, _tabs = {}, _activeTab = nil}
 
     -- =============================================
     --   TAB SYSTEM
     -- =============================================
     function Window:CreateTab(name, icon)
-        local btn = Create("TextButton", {
-            Size = UDim2.new(1,0,0,40), BackgroundTransparency = 1,
-            AutoButtonColor = false, Parent = self._tabList,
-        })
+        local btn = Create("TextButton", {Size = UDim2.new(1,0,0,40), BackgroundTransparency = 1,
+            AutoButtonColor = false, Parent = self._tabList})
         Create("UICorner", {CornerRadius = UDim.new(0,9)}):Clone().Parent = btn
-
-        local indicator = Create("Frame", {
-            Size = UDim2.new(0,4,0.65,0), Position = UDim2.new(0,0,0.175,0),
-            BackgroundColor3 = cfg.AccentColor, BackgroundTransparency = 1, Parent = btn,
-        })
-        Create("UICorner", {CornerRadius = UDim.new(0,2)}):Clone().Parent = indicator
 
         local xOffset = 12
         if icon then
             local iconId = NexusUI.Icons[icon] or icon
-            Create("ImageLabel", {
-                Size = UDim2.new(0,18,0,18), Position = UDim2.new(0,xOffset,0.5,-9),
-                BackgroundTransparency = 1, Image = iconId, ImageColor3 = cfg.MutedColor, Parent = btn,
-            })
+            Create("ImageLabel", {Size = UDim2.new(0,18,0,18), Position = UDim2.new(0,xOffset,0.5,-9),
+                BackgroundTransparency = 1, Image = iconId, ImageColor3 = cfg.MutedColor, Parent = btn})
             xOffset = 38
         end
 
-        Create("TextLabel", {
-            Size = UDim2.new(1,-xOffset-12,1,0), Position = UDim2.new(0,xOffset,0,0),
+        Create("TextLabel", {Size = UDim2.new(1,-xOffset-12,1,0), Position = UDim2.new(0,xOffset,0,0),
             BackgroundTransparency = 1, Text = name, TextColor3 = cfg.MutedColor,
-            TextSize = 14, Font = Enum.Font.Gotham, TextXAlignment = Enum.TextXAlignment.Left, Parent = btn,
-        })
+            TextSize = 14, Font = Enum.Font.Gotham, TextXAlignment = Enum.TextXAlignment.Left, Parent = btn})
 
-        local tabFrame = Create("ScrollingFrame", {
-            Size = UDim2.new(1,0,1,0), BackgroundTransparency = 1,
-            ScrollBarThickness = 4, ScrollBarImageColor3 = cfg.AccentColor,
-            Visible = false, Parent = contentArea,
-        })
+        local tabFrame = Create("ScrollingFrame", {Size = UDim2.new(1,0,1,0), BackgroundTransparency = 1,
+            ScrollBarThickness = 4, ScrollBarImageColor3 = cfg.AccentColor, Visible = false, Parent = contentArea})
         Create("UIListLayout", {Padding = UDim.new(0,8), SortOrder = Enum.SortOrder.LayoutOrder}):Clone().Parent = tabFrame
         Create("UIPadding", {PaddingTop = UDim.new(0,8), PaddingRight = UDim.new(0,12), PaddingBottom = UDim.new(0,8)}):Clone().Parent = tabFrame
 
-        local tabObj = { _frame = tabFrame, _btn = btn }
+        local tabObj = {_frame = tabFrame, _btn = btn}
 
         btn.MouseButton1Click:Connect(function() self:_SelectTab(tabObj) end)
-
         btn.MouseEnter:Connect(function() if self._activeTab ~= tabObj then Tween(btn, {BackgroundTransparency = 0.88}, 0.15) end end)
         btn.MouseLeave:Connect(function() if self._activeTab ~= tabObj then Tween(btn, {BackgroundTransparency = 1}, 0.15) end end)
 
@@ -272,23 +240,17 @@ function NexusUI:CreateWindow(config)
         local cfg = self._cfg
 
         local function BaseRow(height)
-            local row = Create("Frame", {
-                Size = UDim2.new(1,0,0,height or 42),
-                BackgroundColor3 = Color3.fromRGB(20,20,33),
-                BorderSizePixel = 0, Parent = tab._frame,
-            })
+            local row = Create("Frame", {Size = UDim2.new(1,0,0,height or 46),
+                BackgroundColor3 = Color3.fromRGB(20,20,33), BorderSizePixel = 0, Parent = tab._frame})
             Create("UICorner", {CornerRadius = UDim.new(0,10)}):Clone().Parent = row
             return row
         end
 
         function tab:CreateSection(name)
-            local sec = Create("Frame", {Size = UDim2.new(1,0,0,30), BackgroundTransparency = 1, Parent = self._frame})
-            Create("TextLabel", {
-                Size = UDim2.new(1,0,1,0), BackgroundTransparency = 1,
-                Text = name:upper(), TextColor3 = cfg.AccentColor,
-                TextSize = 11, Font = Enum.Font.GothamBold,
-                TextXAlignment = Enum.TextXAlignment.Left, Parent = sec,
-            })
+            local sec = Create("Frame", {Size = UDim2.new(1,0,0,34), BackgroundTransparency = 1, Parent = self._frame})
+            Create("TextLabel", {Size = UDim2.new(1,0,1,0), BackgroundTransparency = 1,
+                Text = name:upper(), TextColor3 = cfg.AccentColor, TextSize = 11.5,
+                Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Left, Parent = sec})
         end
 
         function tab:CreateToggle(config)
@@ -312,12 +274,9 @@ function NexusUI:CreateWindow(config)
                 BackgroundColor3 = Color3.fromRGB(35,35,55), Parent = row})
             Create("UICorner", {CornerRadius = UDim.new(1,0)}):Clone().Parent = track
 
-            local knob = Create("Frame", {
-                Size = UDim2.new(0,18,0,18),
+            local knob = Create("Frame", {Size = UDim2.new(0,18,0,18),
                 Position = value and UDim2.new(1,-20,0.5,-9) or UDim2.new(0,2,0.5,-9),
-                BackgroundColor3 = value and cfg.AccentColor or Color3.fromRGB(200,200,200),
-                Parent = track
-            })
+                BackgroundColor3 = value and cfg.AccentColor or Color3.fromRGB(200,200,200), Parent = track})
             Create("UICorner", {CornerRadius = UDim.new(1,0)}):Clone().Parent = knob
 
             local btn = Create("TextButton", {Size = UDim2.new(1,0,1,0), BackgroundTransparency = 1, Text = "", Parent = row})
@@ -367,13 +326,11 @@ function NexusUI:CreateWindow(config)
             Create("UICorner", {CornerRadius = UDim.new(1,0)}):Clone().Parent = knob
 
             local dragging = false
-            local inputBtn = Create("TextButton", {Size = UDim2.new(1,0,0,30), Position = UDim2.new(0,0,0,-10),
-                BackgroundTransparency = 1, Text = "", Parent = trackBg})
 
-            local function update(input)
+            local function update(pos)
                 local absPos = trackBg.AbsolutePosition
                 local absSize = trackBg.AbsoluteSize
-                local rel = math.clamp((input.Position.X - absPos.X) / absSize.X, 0, 1)
+                local rel = math.clamp((pos.X - absPos.X) / absSize.X, 0, 1)
                 value = math.floor(min + rel * (max - min) + 0.5)
                 value = math.clamp(value, min, max)
                 local pct = (value - min) / (max - min)
@@ -383,9 +340,21 @@ function NexusUI:CreateWindow(config)
                 if config.Callback then config.Callback(value) end
             end
 
-            inputBtn.MouseButton1Down:Connect(function() dragging = true; update(Mouse) end)
-            UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end end)
-            RunService.RenderStepped:Connect(function() if dragging then update(Mouse) end end)
+            local inputBtn = Create("TextButton", {Size = UDim2.new(1,0,0,30), Position = UDim2.new(0,0,0,-10),
+                BackgroundTransparency = 1, Text = "", Parent = trackBg})
+
+            inputBtn.MouseButton1Down:Connect(function()
+                dragging = true
+                update(UserInputService:GetMouseLocation())
+            end)
+
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+            end)
+
+            RunService.RenderStepped:Connect(function()
+                if dragging then update(UserInputService:GetMouseLocation()) end
+            end)
 
             return {GetValue = function() return value end}
         end
@@ -433,51 +402,46 @@ function NexusUI:CreateWindow(config)
             local options = config.Options or {}
             local selected = config.Default or options[1] or ""
             local open = false
-            local row = BaseRow(46)
+            local row = BaseRow(52)
 
-            Create("TextLabel", {Size = UDim2.new(1,-28,0,16), Position = UDim2.new(0,16,0,5),
+            Create("TextLabel", {Size = UDim2.new(1,-28,0,16), Position = UDim2.new(0,16,0,6),
                 BackgroundTransparency = 1, Text = config.Name or "Dropdown",
-                TextColor3 = cfg.TextColor, TextSize = 12, Font = Enum.Font.Gotham,
+                TextColor3 = cfg.TextColor, TextSize = 13, Font = Enum.Font.Gotham,
                 TextXAlignment = Enum.TextXAlignment.Left, Parent = row})
 
-            local selBtn = Create("TextButton", {
-                Size = UDim2.new(1,-28,0,26), Position = UDim2.new(0,16,0,20),
-                BackgroundColor3 = Color3.fromRGB(10,10,18), Text = "  " .. selected,
-                TextColor3 = cfg.TextColor, TextSize = 13, Font = Enum.Font.Gotham,
-                TextXAlignment = Enum.TextXAlignment.Left, AutoButtonColor = false, Parent = row,
-            })
-            Create("UICorner", {CornerRadius = UDim.new(0,6)}):Clone().Parent = selBtn
+            local selBtn = Create("TextButton", {Size = UDim2.new(1,-32,0,32), Position = UDim2.new(0,16,0,22),
+                BackgroundColor3 = Color3.fromRGB(10,10,18), Text = "   " .. selected,
+                TextColor3 = cfg.TextColor, TextSize = 14, Font = Enum.Font.Gotham,
+                TextXAlignment = Enum.TextXAlignment.Left, AutoButtonColor = false, Parent = row})
+            Create("UICorner", {CornerRadius = UDim.new(0,8)}):Clone().Parent = selBtn
 
-            Create("TextLabel", {Size = UDim2.new(0,20,1,0), Position = UDim2.new(1,-22,0,0),
-                BackgroundTransparency = 1, Text = "▾", TextColor3 = cfg.MutedColor,
-                TextSize = 14, Font = Enum.Font.GothamBold, Parent = selBtn})
+            local arrow = Create("ImageLabel", {Size = UDim2.new(0,16,0,16), Position = UDim2.new(1,-26,0.5,-8),
+                BackgroundTransparency = 1, Image = NexusUI.Icons.chevronDown,
+                ImageColor3 = cfg.MutedColor, Parent = selBtn})
 
-            local dropFrame = Create("Frame", {
-                Size = UDim2.new(1,-28,0, #options * 28 + 8),
-                Position = UDim2.new(0,16,0,50), BackgroundColor3 = Color3.fromRGB(10,10,18),
-                Visible = false, ZIndex = 5, Parent = row,
-            })
-            Create("UICorner", {CornerRadius = UDim.new(0,6)}):Clone().Parent = dropFrame
+            local dropFrame = Create("Frame", {Size = UDim2.new(1,-32,0, #options * 34 + 12),
+                Position = UDim2.new(0,16,0,58), BackgroundColor3 = Color3.fromRGB(10,10,18),
+                Visible = false, ZIndex = 10, Parent = row})
+            Create("UICorner", {CornerRadius = UDim.new(0,8)}):Clone().Parent = dropFrame
             Create("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0,2)}):Clone().Parent = dropFrame
-            Create("UIPadding", {PaddingTop = UDim.new(0,4), PaddingBottom = UDim.new(0,4)}):Clone().Parent = dropFrame
+            Create("UIPadding", {PaddingTop = UDim.new(0,6), PaddingBottom = UDim.new(0,6)}):Clone().Parent = dropFrame
 
             for _, opt in ipairs(options) do
-                local optBtn = Create("TextButton", {
-                    Size = UDim2.new(1,0,0,28), BackgroundTransparency = 1,
-                    Text = "  " .. opt, TextColor3 = opt == selected and cfg.AccentColor or cfg.TextColor,
-                    TextSize = 13, Font = Enum.Font.Gotham, TextXAlignment = Enum.TextXAlignment.Left,
-                    Parent = dropFrame,
-                })
+                local optBtn = Create("TextButton", {Size = UDim2.new(1,0,0,34), BackgroundTransparency = 1,
+                    Text = "   " .. opt, TextColor3 = cfg.TextColor, TextSize = 14,
+                    Font = Enum.Font.Gotham, TextXAlignment = Enum.TextXAlignment.Left, Parent = dropFrame})
+
                 optBtn.MouseButton1Click:Connect(function()
                     selected = opt
-                    selBtn.Text = "  " .. selected
+                    selBtn.Text = "   " .. selected
                     for _, c in ipairs(dropFrame:GetChildren()) do
                         if c:IsA("TextButton") then c.TextColor3 = cfg.TextColor end
                     end
                     optBtn.TextColor3 = cfg.AccentColor
                     open = false
                     dropFrame.Visible = false
-                    row.Size = UDim2.new(1,0,0,46)
+                    row.Size = UDim2.new(1,0,0,52)
+                    arrow.Rotation = 0
                     if config.Callback then config.Callback(selected) end
                 end)
             end
@@ -485,7 +449,8 @@ function NexusUI:CreateWindow(config)
             selBtn.MouseButton1Click:Connect(function()
                 open = not open
                 dropFrame.Visible = open
-                row.Size = open and UDim2.new(1,0,0,46 + #options*28 + 8) or UDim2.new(1,0,0,46)
+                row.Size = open and UDim2.new(1,0,0,52 + #options*34 + 16) or UDim2.new(1,0,0,52)
+                arrow.Rotation = open and 180 or 0
             end)
 
             return {GetValue = function() return selected end}
